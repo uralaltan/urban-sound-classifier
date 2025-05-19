@@ -1,0 +1,7 @@
+torch>=2.1
+torchaudio>=2.1
+pandas
+numpy
+pyyaml
+librosa
+wandb

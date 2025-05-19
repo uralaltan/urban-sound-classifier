@@ -1,0 +1,9 @@
+csv: data/raw/UrbanSound8K/metadata/UrbanSound8K.csv
+audio_root: data/raw/UrbanSound8K/audio
+train_folds: [ 1,2,3,4,5,6,7,8,9 ]
+val_folds: [ 10 ]
+batch_size: 32
+epochs: 50
+lr: 0.001
+device: "mps"
+seed: 42
