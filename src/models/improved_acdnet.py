@@ -4,8 +4,6 @@ from torchvision.ops import SqueezeExcitation
 
 
 class ImprovedACDNet(nn.Module):
-    """Enhanced ACDNet with SE blocks & multi-scale conv."""
-
     def __init__(self, n_classes: int = 10):
         super().__init__()
 
@@ -19,7 +17,6 @@ class ImprovedACDNet(nn.Module):
             )
 
         self.layer1 = conv_block(1, 32)
-        # multi-scale branch
         self.branch3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
         self.branch5 = nn.Conv2d(32, 64, kernel_size=5, padding=2)
         self.bn_ms = nn.BatchNorm2d(128, momentum=0.95)
@@ -33,9 +30,9 @@ class ImprovedACDNet(nn.Module):
         )
 
     def forward(self, x):
-        x = self.layer1(x)  # (B,32,H,W)
+        x = self.layer1(x)
         b3 = self.branch3(x)
         b5 = self.branch5(x)
-        x = self.relu(self.bn_ms(torch.cat([b3, b5], dim=1)))  # (B,128,H,W)
-        x = self.gap(x).squeeze(-1).squeeze(-1)  # (B,128)
+        x = self.relu(self.bn_ms(torch.cat([b3, b5], dim=1)))
+        x = self.gap(x).squeeze(-1).squeeze(-1)
         return self.classifier(x)

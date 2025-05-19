@@ -3,7 +3,6 @@ import torch.nn.functional as F
 
 
 def seed_all(seed: int = 42):
-    """Fix all random seeds for reproducibility."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -15,7 +14,6 @@ def seed_all(seed: int = 42):
 
 def pad_collate(batch, max_frames=173):
     specs, labels = zip(*batch)
-    # pad / truncate like above
     specs2 = []
     for mel in specs:
         T = mel.size(2)

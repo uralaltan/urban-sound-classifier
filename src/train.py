@@ -1,22 +1,18 @@
-# src/train.py
 import argparse
 import yaml
 import torch
-import os
 import csv
 import logging
 from pathlib import Path
 from datetime import datetime
 import sys
 
-# ——— Setup logging ———
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-# ——— Fix imports regardless of cwd ———
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
@@ -29,14 +25,12 @@ from models.improved_acdnet import ImprovedACDNet
 
 
 def main(cfg_path, pretrained_path=None):
-    # Load config
     cfg_file = (ROOT / cfg_path).resolve()
     cfg = yaml.safe_load(open(cfg_file))
 
     seed_all(cfg['seed'])
     device = torch.device(cfg['device'])
 
-    # Prepare dataset
     csv_path = str((ROOT / cfg['csv']).resolve())
     audio_root = str((ROOT / cfg['audio_root']).resolve())
     train_ds = UrbanSoundDS(csv_path, audio_root,
@@ -54,10 +48,8 @@ def main(cfg_path, pretrained_path=None):
         shuffle=False, num_workers=4
     )
 
-    # Build model
     model = ImprovedACDNet().to(device)
 
-    # — Optional: load your pretrained weights —
     if pretrained_path:
         ckpt = (ROOT / pretrained_path).resolve()
         state = torch.load(ckpt, map_location=device)
@@ -71,7 +63,6 @@ def main(cfg_path, pretrained_path=None):
         epochs=cfg['epochs'])
     criterion = torch.nn.CrossEntropyLoss(label_smoothing=0.1)
 
-    # — Prepare results CSV, but first back it up if it exists —
     results_csv = ROOT / "reports" / "figures" / "val_results.csv"
     results_csv.parent.mkdir(parents=True, exist_ok=True)
 
@@ -85,7 +76,6 @@ def main(cfg_path, pretrained_path=None):
         writer = csv.writer(f)
         writer.writerow(["epoch", "val_accuracy"])
 
-    # — Training loop with logging —
     best_acc = 0.0
     for epoch in range(1, cfg['epochs'] + 1):
         logging.info(f"Starting epoch {epoch}/{cfg['epochs']}")
@@ -102,7 +92,6 @@ def main(cfg_path, pretrained_path=None):
             if batch_idx % 100 == 0 or batch_idx == len(train_loader):
                 logging.info(f"Epoch {epoch}, Step {batch_idx}/{len(train_loader)}, Loss: {loss.item():.4f}")
 
-        # validation
         model.eval()
         correct = total = 0
         with torch.no_grad():
@@ -115,12 +104,10 @@ def main(cfg_path, pretrained_path=None):
         val_acc = correct / total
         logging.info(f"Epoch {epoch} validation accuracy: {val_acc:.4f}")
 
-        # append results
         with open(results_csv, 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow([epoch, f"{val_acc:.4f}"])
 
-        # save best
         if val_acc > best_acc:
             best_acc = val_acc
             ckpt_dir = ROOT / "checkpoints"

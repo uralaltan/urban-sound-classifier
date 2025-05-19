@@ -13,5 +13,5 @@ class BaselineCNN(nn.Module):
         self.fc = nn.Linear(64, n_classes)
 
     def forward(self, x):
-        x = self.net(x)  # (B,64,1,1)
+        x = self.net(x)
         return self.fc(x.view(x.size(0), -1))
