@@ -177,4 +177,4 @@ cython_debug/
 data/raw/UrbanSound8K
 
 # DS Store
-*.DS_Store
+.DS_Store
