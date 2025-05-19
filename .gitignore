@@ -175,3 +175,6 @@ cython_debug/
 
 # Dataset
 data/raw/UrbanSound8K
+
+# DS Store
+*.DS_Store
