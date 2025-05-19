@@ -174,5 +174,4 @@ cython_debug/
 .pypirc
 
 # Dataset
-data/audio
-data/metadata
+data/raw/UrbanSound8K
