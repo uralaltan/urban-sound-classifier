@@ -78,7 +78,7 @@ Veri seti 10 kentsel ses sınıfı içerir:
 
 ## Araştırma Makalesi
 
-Detaylı metodoloji, sonuçlar ve analiz için `reports/paper/conference_paper.md` dosyasındaki konferans makalemize bakın.
+Detaylı metodoloji, sonuçlar ve analiz için `reports/paper/conference_paper.md` dosyasındaki konferans bildirisine bakın.
 
 ## Gereksinimler
 
