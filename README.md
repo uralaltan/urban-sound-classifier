@@ -191,7 +191,7 @@ Sensör değişkenliğini simüle etmek için minör Gaussian gürültü eklendi
 ### 4.1 Ana Sonuçlar
 
 | Model       | Parametreler | Doğ. Başarısı (%) | Test Başarısı (%) | F1-Score | Inference (ms) |
-|-------------|--------------|-------------------|-------------------|----------|----------------|
+| ----------- | ------------ | ----------------- | ----------------- | -------- | -------------- |
 | Temel CNN   | 2.1M         | 80.1              | 79.4              | 0.791    | 12.3           |
 | SE-CNN      | 4.8M         | 86.7              | 85.9              | 0.856    | 15.7           |
 | AST (bizim) | 9.3M         | 91.3              | 90.5              | 0.903    | 28.4           |
@@ -213,17 +213,119 @@ Sensör değişkenliğini simüle etmek için minör Gaussian gürültü eklendi
 ### 4.3 Ablasyon Çalışması
 
 | Teknik             | AST Temel | +SpecAugment | +Mixup | +Her İkisi |
-|--------------------|-----------|--------------|--------|------------|
+| ------------------ | --------- | ------------ | ------ | ---------- |
 | Doğrulama Başarısı | 87.9%     | 89.1%        | 88.7%  | 91.3%      |
 | Test Başarısı      | 87.2%     | 88.6%        | 88.1%  | 90.5%      |
 
 ### 4.4 Hesaplama Maliyeti Analizi
 
 | Model     | FLOPs (G) | GPU Bellek (MB) | Eğitim Süresi (saat) |
-|-----------|-----------|-----------------|----------------------|
+| --------- | --------- | --------------- | -------------------- |
 | Temel CNN | 1.2       | 1024            | 2.1                  |
 | SE-CNN    | 2.8       | 1536            | 3.4                  |
 | AST       | 12.4      | 4096            | 8.7                  |
+
+---
+
+## 4.5 Model Switching ve Kullanım
+
+Bu proje, farklı model mimarilerini kolayca değiştirmeyi sağlayan esnek bir yapıya sahiptir. Model seçimi tamamen YAML konfigürasyon dosyalarındaki `model_type` parametresi ile kontrol edilir.
+
+### 4.5.1 Desteklenen Model Türleri
+
+Proje üç farklı model mimarisini desteklemektedir:
+
+1. **Baseline CNN** (`baseline_cnn`)
+
+   - Hafif ve hızlı model
+   - 2.1M parametre
+   - Edge cihazlar için uygun
+
+2. **SE-CNN** (`se_cnn`)
+
+   - Squeeze-and-Excitation blokları ile geliştirilmiş CNN
+   - 4.8M parametre
+   - Performans-maliyet dengesi optimal
+
+3. **AST Transformer** (`ast_transformer`)
+   - Audio Spectrogram Transformer
+   - 9.3M parametre
+   - En yüksek doğruluk performansı
+
+### 4.5.2 Konfigürasyon Dosyaları
+
+Her model için önceden yapılandırılmış YAML dosyaları mevcuttur:
+
+- `experiments/cfg_baseline.yaml` → Baseline CNN modeli
+- `experiments/cfg_improved.yaml` → SE-CNN modeli
+- `experiments/cfg_ast.yaml` → AST Transformer modeli
+
+### 4.5.3 Model Eğitimi
+
+Herhangi bir modeli eğitmek için sadece ilgili konfigürasyon dosyasını belirtmeniz yeterlidir:
+
+```bash
+# Virtual environment'ı aktifleştirin
+source .venv/bin/activate
+
+# Baseline CNN modelini eğitin
+python src/train.py --cfg experiments/cfg_baseline.yaml
+
+# SE-CNN modelini eğitin
+python src/train.py --cfg experiments/cfg_improved.yaml
+
+# AST Transformer modelini eğitin
+python src/train.py --cfg experiments/cfg_ast.yaml
+```
+
+### 4.5.4 Model Parametreleri
+
+#### Baseline CNN ve SE-CNN
+
+- `n_classes`: Sınıf sayısı (varsayılan: 10)
+
+#### AST Transformer
+
+- `n_classes`: Sınıf sayısı (varsayılan: 10)
+- `input_dims`: Giriş spektrogram boyutları (varsayılan: (128, 173))
+- `model_size`: Model boyutu ("tiny", "small", "base", "large")
+- `patch_size`: Patch boyutu (varsayılan: (16, 16))
+
+### 4.5.5 Özelleştirilmiş Konfigürasyon
+
+Yeni bir model konfigürasyonu oluşturmak için mevcut YAML dosyalarından birini kopyalayıp `model_type` parametresini değiştirebilirsiniz:
+
+```yaml
+# Örnek konfigürasyon
+model_type: ast_transformer # baseline_cnn, se_cnn, ast_transformer
+seed: 42
+device: cuda
+epochs: 100
+batch_size: 24
+learning_rate: 0.0008
+
+# Model spesifik parametreler (AST için)
+model:
+  input_dims: [128, 173]
+  model_size: "base"
+  patch_size: [16, 16]
+
+# Veri yolları
+csv: data/UrbanSound8K/metadata/UrbanSound8K.csv
+audio_root: data/UrbanSound8K/audio
+train_folds: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+val_folds: [10]
+```
+
+### 4.5.6 Önceden Eğitilmiş Model Yükleme
+
+Önceden eğitilmiş bir checkpoint'ten devam etmek için:
+
+```bash
+python src/train.py --cfg experiments/cfg_ast.yaml --pretrained checkpoints/best_model.pth
+```
+
+Bu esnek yapı sayesinde, farklı model mimarilerini test etmek ve karşılaştırmak için sadece konfigürasyon dosyasını değiştirmeniz yeterlidir.
 
 ---
 

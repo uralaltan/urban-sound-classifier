@@ -29,7 +29,6 @@ from models.custom_urbansound_net import CustomUrbanSoundNet, TransformerUrbanSo
 
 
 class AdvancedSpecAugment:
-    """Advanced SpecAugment with configurable parameters"""
 
     def __init__(self, freq_mask_prob=0.6, time_mask_prob=0.6,
                  freq_mask_size=12, time_mask_size=20):
@@ -42,14 +41,12 @@ class AdvancedSpecAugment:
         mel = mel_spec.clone()
         _, n_mels, time_steps = mel.shape
 
-        # Multiple frequency masks
         if torch.rand(1) < self.freq_mask_prob:
             for _ in range(torch.randint(1, 3, (1,)).item()):
                 freq_mask_start = torch.randint(0, max(1, n_mels - self.freq_mask_size), (1,))
                 freq_mask_end = min(freq_mask_start + self.freq_mask_size, n_mels)
                 mel[:, freq_mask_start:freq_mask_end, :] = mel.mean()
 
-        # Multiple time masks
         if torch.rand(1) < self.time_mask_prob:
             for _ in range(torch.randint(1, 3, (1,)).item()):
                 time_mask_start = torch.randint(0, max(1, time_steps - self.time_mask_size), (1,))
@@ -60,22 +57,19 @@ class AdvancedSpecAugment:
 
 
 class WarmupCosineScheduler:
-    """Learning rate scheduler with warmup and cosine annealing"""
 
     def __init__(self, optimizer, warmup_epochs, total_epochs, base_lr, min_lr=1e-6):
         self.optimizer = optimizer
-        self.warmup_epochs = int(warmup_epochs)  # Ensure integer
-        self.total_epochs = int(total_epochs)  # Ensure integer
-        self.base_lr = float(base_lr)  # Ensure float
-        self.min_lr = float(min_lr)  # Ensure float
+        self.warmup_epochs = int(warmup_epochs)
+        self.total_epochs = int(total_epochs)
+        self.base_lr = float(base_lr)
+        self.min_lr = float(min_lr)
         self.current_epoch = 0
 
     def step(self):
         if self.current_epoch < self.warmup_epochs:
-            # Warmup phase
             lr = self.base_lr * (self.current_epoch + 1) / self.warmup_epochs
         else:
-            # Cosine annealing phase
             progress = (self.current_epoch - self.warmup_epochs) / (self.total_epochs - self.warmup_epochs)
             lr = self.min_lr + (self.base_lr - self.min_lr) * 0.5 * (1 + np.cos(np.pi * progress))
 
@@ -87,7 +81,6 @@ class WarmupCosineScheduler:
 
 
 class EarlyStopping:
-    """Early stopping with patience"""
 
     def __init__(self, patience=25, min_delta=0.001, mode='max'):
         self.patience = patience
@@ -112,7 +105,6 @@ class EarlyStopping:
 
 def train_epoch_advanced(model, train_loader, optimizer, criterion, mixup_criterion,
                          cfg, device, epoch):
-    """Advanced training with mixup and gradient clipping"""
     model.train()
     total_loss = 0
     correct = 0
@@ -121,7 +113,6 @@ def train_epoch_advanced(model, train_loader, optimizer, criterion, mixup_criter
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device, non_blocking=True), target.to(device, non_blocking=True)
 
-        # Apply mixup with probability
         if cfg.get('use_mixup', False) and torch.rand(1) < 0.5:
             mixed_data, target_a, target_b, lam = mixup_data(
                 data, target, cfg.get('mixup_alpha', 0.3), device
@@ -136,13 +127,11 @@ def train_epoch_advanced(model, train_loader, optimizer, criterion, mixup_criter
 
         loss.backward()
 
-        # Gradient clipping
         if cfg.get('gradient_clipping', 0) > 0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), cfg['gradient_clipping'])
 
         optimizer.step()
 
-        # Track metrics
         total_loss += loss.item()
         if not cfg.get('use_mixup', False) or torch.rand(1) >= 0.5:
             pred = output.argmax(dim=1)
@@ -154,7 +143,6 @@ def train_epoch_advanced(model, train_loader, optimizer, criterion, mixup_criter
 
 
 def validate_with_tta(model, val_loader, criterion, device, cfg):
-    """Validation with Test Time Augmentation"""
     model.eval()
     val_loss = 0
     correct = 0
@@ -167,15 +155,12 @@ def validate_with_tta(model, val_loader, criterion, device, cfg):
             data, target = data.to(device, non_blocking=True), target.to(device, non_blocking=True)
 
             if tta_steps > 1:
-                # Test Time Augmentation
                 outputs = []
                 for _ in range(tta_steps):
-                    # Apply light augmentation
                     augmented_data = data + torch.randn_like(data) * 0.01
                     output = model(augmented_data)
                     outputs.append(output)
 
-                # Average predictions
                 output = torch.stack(outputs).mean(dim=0)
             else:
                 output = model(data)
@@ -192,7 +177,6 @@ def validate_with_tta(model, val_loader, criterion, device, cfg):
 
 
 def save_model(model, optimizer, scheduler, epoch, acc, loss, cfg, save_path, is_best=False):
-    """Save model checkpoint"""
     checkpoint = {
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
@@ -211,12 +195,10 @@ def save_model(model, optimizer, scheduler, epoch, acc, loss, cfg, save_path, is
 
 
 def plot_training_history(history, save_path):
-    """Plot and save training history"""
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 10))
 
     epochs = range(1, len(history['train_loss']) + 1)
 
-    # Loss plots
     ax1.plot(epochs, history['train_loss'], 'bo-', label='Training Loss')
     ax1.plot(epochs, history['val_loss'], 'ro-', label='Validation Loss')
     ax1.set_title('Training and Validation Loss')
@@ -225,7 +207,6 @@ def plot_training_history(history, save_path):
     ax1.legend()
     ax1.grid(True)
 
-    # Accuracy plots
     ax2.plot(epochs, history['train_acc'], 'bo-', label='Training Accuracy')
     ax2.plot(epochs, history['val_acc'], 'ro-', label='Validation Accuracy')
     ax2.set_title('Training and Validation Accuracy')
@@ -234,7 +215,6 @@ def plot_training_history(history, save_path):
     ax2.legend()
     ax2.grid(True)
 
-    # Learning rate plot
     if 'lr' in history:
         ax3.plot(epochs, history['lr'], 'go-', label='Learning Rate')
         ax3.set_title('Learning Rate Schedule')
@@ -244,7 +224,6 @@ def plot_training_history(history, save_path):
         ax3.grid(True)
         ax3.set_yscale('log')
 
-    # Time per epoch
     if 'epoch_time' in history:
         ax4.plot(epochs, history['epoch_time'], 'mo-', label='Time per Epoch')
         ax4.set_title('Training Time per Epoch')
@@ -259,20 +238,16 @@ def plot_training_history(history, save_path):
 
 
 def main(cfg_path, pretrained_path=None):
-    # Load configuration
     cfg_file = (ROOT / cfg_path).resolve()
     cfg = yaml.safe_load(open(cfg_file))
 
-    # Set up reproducibility
     seed_all(cfg['seed'])
 
-    # Device setup
     device = torch.device(cfg['device'] if torch.cuda.is_available() else 'cpu')
     if device.type == 'cuda':
         torch.backends.cudnn.benchmark = True
         logging.info(f"Using GPU: {torch.cuda.get_device_name()}")
 
-    # Advanced data augmentation
     train_transform = AdvancedSpecAugment(
         freq_mask_prob=cfg.get('freq_mask_prob', 0.6),
         time_mask_prob=cfg.get('time_mask_prob', 0.6),
@@ -280,7 +255,6 @@ def main(cfg_path, pretrained_path=None):
         time_mask_size=cfg.get('time_mask_size', 20)
     ) if cfg.get('augmentation_prob', 0.8) > 0 else None
 
-    # Data loading
     csv_path = str((ROOT / cfg['csv']).resolve())
     audio_root = str((ROOT / cfg['audio_root']).resolve())
 
@@ -293,12 +267,11 @@ def main(cfg_path, pretrained_path=None):
     val_ds = UrbanSoundDS(
         csv_path, audio_root,
         folds=cfg['val_folds'],
-        transform=None  # No augmentation for validation
+        transform=None
     )
 
     logging.info(f"Training samples: {len(train_ds)}, Validation samples: {len(val_ds)}")
 
-    # Optimized data loaders
     num_workers = min(8, torch.get_num_threads())
 
     train_loader = torch.utils.data.DataLoader(
@@ -321,7 +294,6 @@ def main(cfg_path, pretrained_path=None):
         collate_fn=pad_collate
     )
 
-    # Model selection
     model_type = cfg.get('model_type', 'custom_urbansound')
     if model_type == 'custom_urbansound':
         model = CustomUrbanSoundNet(
@@ -336,20 +308,17 @@ def main(cfg_path, pretrained_path=None):
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
-    # Count parameters
     total_params = sum(p.numel() for p in model.parameters())
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     logging.info(f"Model: {model_type}")
     logging.info(f"Total params: {total_params:,}, Trainable: {trainable_params:,}")
 
-    # Load pretrained weights if provided
     if pretrained_path:
         ckpt = (ROOT / pretrained_path).resolve()
         state = torch.load(ckpt, map_location=device)
         model.load_state_dict(state, strict=False)
         logging.info(f"Loaded pretrained weights from {ckpt.name}")
 
-    # Optimizer
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=cfg['lr'],
@@ -358,7 +327,6 @@ def main(cfg_path, pretrained_path=None):
         eps=1e-8
     )
 
-    # Learning rate scheduler
     scheduler = WarmupCosineScheduler(
         optimizer,
         warmup_epochs=int(cfg.get('warmup_epochs', 10)),
@@ -367,7 +335,6 @@ def main(cfg_path, pretrained_path=None):
         min_lr=float(cfg.get('min_lr', 1e-6))
     )
 
-    # Loss functions
     criterion = torch.nn.CrossEntropyLoss(
         label_smoothing=cfg.get('label_smoothing', 0.15)
     )
@@ -376,20 +343,17 @@ def main(cfg_path, pretrained_path=None):
         label_smoothing=cfg.get('label_smoothing', 0.15)
     )
 
-    # Early stopping
     early_stopping = EarlyStopping(
         patience=cfg.get('early_stopping_patience', 25),
         min_delta=cfg.get('early_stopping_min_delta', 0.001),
         mode='max'
     )
 
-    # Results tracking
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     results_dir = ROOT / "reports" / "figures"
     results_dir.mkdir(parents=True, exist_ok=True)
     results_csv = results_dir / f"advanced_results_{timestamp}.csv"
 
-    # Model checkpoints directory
     checkpoints_dir = ROOT / "models" / "checkpoints" / f"run_{timestamp}"
     checkpoints_dir.mkdir(parents=True, exist_ok=True)
 
@@ -397,15 +361,13 @@ def main(cfg_path, pretrained_path=None):
         writer = csv.writer(f)
         writer.writerow(["epoch", "train_loss", "train_acc", "val_loss", "val_acc", "lr", "time"])
 
-    # Training history for plotting
     history = {
         'train_loss': [], 'train_acc': [], 'val_loss': [], 'val_acc': [],
         'lr': [], 'epoch_time': []
     }
 
-    # Training loop
     best_acc = 0.0
-    best_models = []  # Store top-k models
+    best_models = []
     total_start_time = time.time()
 
     logging.info(f"Starting advanced training for {cfg['epochs']} epochs...")
@@ -414,20 +376,16 @@ def main(cfg_path, pretrained_path=None):
     for epoch in range(1, cfg['epochs'] + 1):
         epoch_start = time.time()
 
-        # Update learning rate
         current_lr = scheduler.step()
 
-        # Training
         train_loss, train_acc = train_epoch_advanced(
             model, train_loader, optimizer, criterion, mixup_criterion, cfg, device, epoch
         )
 
-        # Validation with TTA
         val_loss, val_acc = validate_with_tta(model, val_loader, criterion, device, cfg)
 
         epoch_time = time.time() - epoch_start
 
-        # Update history
         history['train_loss'].append(train_loss)
         history['train_acc'].append(train_acc)
         history['val_loss'].append(val_loss)
@@ -440,22 +398,18 @@ def main(cfg_path, pretrained_path=None):
                      f'Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}% - '
                      f'LR: {current_lr:.2e} - Time: {epoch_time:.1f}s')
 
-        # Save results to CSV
         with open(results_csv, 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow([epoch, train_loss, train_acc, val_loss, val_acc, current_lr, epoch_time])
 
-        # Save model checkpoints
         is_best = val_acc > best_acc
         if is_best:
             best_acc = val_acc
 
-        # Save top-k models
         if cfg.get('save_top_k', 3) > 0:
             checkpoint_path = checkpoints_dir / f"model_epoch_{epoch}_acc_{val_acc:.2f}.pth"
             save_model(model, optimizer, scheduler, epoch, val_acc, val_loss, cfg, checkpoint_path, is_best)
 
-            # Keep only top-k models
             best_models.append((val_acc, checkpoint_path))
             best_models.sort(key=lambda x: x[0], reverse=True)
 
@@ -464,38 +418,31 @@ def main(cfg_path, pretrained_path=None):
                 if old_path.exists():
                     old_path.unlink()
 
-        # Save every N epochs
         if cfg.get('save_every_n_epochs', 0) > 0 and epoch % cfg['save_every_n_epochs'] == 0:
             checkpoint_path = checkpoints_dir / f"checkpoint_epoch_{epoch}.pth"
             save_model(model, optimizer, scheduler, epoch, val_acc, val_loss, cfg, checkpoint_path)
 
-        # Early stopping check
         early_stopping(val_acc)
         if early_stopping.early_stop:
             logging.info(f"Early stopping triggered at epoch {epoch}")
             break
 
-        # Milestone logging
         if val_acc >= 85.0 and val_acc < 90.0:
             logging.info(f"🎯 Reached {val_acc:.2f}% - Getting close to 90% target!")
         elif val_acc >= 90.0:
             logging.info(f"🏆 BREAKTHROUGH! Achieved {val_acc:.2f}% - Target reached!")
 
-    # Training completed
     total_time = time.time() - total_start_time
     logging.info(f"Training completed in {total_time / 3600:.2f} hours")
     logging.info(f"Best validation accuracy: {best_acc:.2f}%")
 
-    # Save final model
     final_path = checkpoints_dir / "final_model.pth"
     save_model(model, optimizer, scheduler, epoch, val_acc, val_loss, cfg, final_path)
 
-    # Plot training history
     plot_path = results_dir / f"training_history_{timestamp}.png"
     plot_training_history(history, plot_path)
     logging.info(f"Training plots saved to {plot_path}")
 
-    # Summary statistics
     logging.info("\n" + "=" * 50)
     logging.info("TRAINING SUMMARY")
     logging.info("=" * 50)

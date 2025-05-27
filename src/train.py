@@ -24,23 +24,38 @@ from augment import spec_augment
 from utils import seed_all, pad_collate
 from models.baseline_cnn import BaselineCNN
 from models.improved_acdnet import ImprovedACDNet
-from models.transfer_acdnet import TransferACDNet
+from models.ast_model import create_ast_model
 
 
-def get_model(model_type, n_classes=10):
-    """Select model based on configuration"""
+def get_model(model_type, n_classes=10, **kwargs):
     if model_type == 'baseline':
         return BaselineCNN(n_classes)
     elif model_type == 'improved':
         return ImprovedACDNet(n_classes)
-    elif model_type == 'transfer':
-        return TransferACDNet(n_classes)
+    elif model_type == 'baseline_cnn':
+        return BaselineCNN(n_classes)
+    elif model_type == 'se_cnn':
+        return ImprovedACDNet(n_classes)
+    elif model_type == 'ast_transformer':
+        input_dims = kwargs.get('input_dims', (128, 173))
+        patch_size = kwargs.get('patch_size', (16, 16))
+        model_size = kwargs.get('model_size', 'base')
+        dropout = kwargs.get('dropout', 0.1)
+        pretrained = kwargs.get('pretrained', None)
+
+        return create_ast_model(
+            n_classes=n_classes,
+            input_dims=input_dims,
+            patch_size=patch_size,
+            model_size=model_size,
+            dropout=dropout,
+            pretrained=pretrained
+        )
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
 
 def train_epoch(model, train_loader, optimizer, criterion, device, epoch, log_interval=50):
-    """Optimized training epoch with faster logging"""
     model.train()
     total_loss = 0
     correct = 0
@@ -57,13 +72,11 @@ def train_epoch(model, train_loader, optimizer, criterion, device, epoch, log_in
         loss.backward()
         optimizer.step()
 
-        # Track metrics
         total_loss += loss.item()
         pred = output.argmax(dim=1)
         correct += pred.eq(target).sum().item()
         total += target.size(0)
 
-        # Less frequent logging for speed
         if batch_idx % log_interval == 0 or batch_idx == len(train_loader):
             elapsed = time.time() - start_time
             acc = 100. * correct / total
@@ -75,7 +88,6 @@ def train_epoch(model, train_loader, optimizer, criterion, device, epoch, log_in
 
 
 def validate(model, val_loader, criterion, device):
-    """Fast validation without detailed logging"""
     model.eval()
     val_loss = 0
     correct = 0
@@ -97,26 +109,21 @@ def validate(model, val_loader, criterion, device):
 
 
 def main(cfg_path, pretrained_path=None):
-    # Load configuration
     cfg_file = (ROOT / cfg_path).resolve()
     cfg = yaml.safe_load(open(cfg_file))
 
-    # Set up reproducibility
     seed_all(cfg['seed'])
 
-    # Device setup with optimization
     device = torch.device(cfg['device'] if torch.cuda.is_available() else 'cpu')
     if device.type == 'cuda':
-        torch.backends.cudnn.benchmark = True  # Enable for faster training
+        torch.backends.cudnn.benchmark = True
         logging.info(f"Using GPU: {torch.cuda.get_device_name()}")
     else:
         logging.info("Using CPU")
 
-    # Data loading with optimizations
     csv_path = str((ROOT / cfg['csv']).resolve())
     audio_root = str((ROOT / cfg['audio_root']).resolve())
 
-    # Create datasets
     train_ds = UrbanSoundDS(csv_path, audio_root,
                             folds=cfg['train_folds'],
                             transform=spec_augment)
@@ -125,8 +132,7 @@ def main(cfg_path, pretrained_path=None):
 
     logging.info(f"Training samples: {len(train_ds)}, Validation samples: {len(val_ds)}")
 
-    # Optimized data loaders
-    num_workers = min(8, torch.get_num_threads())  # Optimal worker count
+    num_workers = min(8, torch.get_num_threads())
 
     train_loader = torch.utils.data.DataLoader(
         train_ds,
@@ -140,7 +146,7 @@ def main(cfg_path, pretrained_path=None):
 
     val_loader = torch.utils.data.DataLoader(
         val_ds,
-        batch_size=cfg['batch_size'] * 2,  # Larger batch for validation
+        batch_size=cfg['batch_size'] * 2,
         shuffle=False,
         num_workers=num_workers,
         pin_memory=True if device.type == 'cuda' else False,
@@ -148,23 +154,28 @@ def main(cfg_path, pretrained_path=None):
         collate_fn=pad_collate
     )
 
-    # Model setup
     model_type = cfg.get('model_type', 'baseline')
-    model = get_model(model_type).to(device)
 
-    # Count parameters
+    model_kwargs = {
+        'input_dims': cfg.get('input_dims', (128, 173)),
+        'patch_size': cfg.get('patch_size', (16, 16)),
+        'model_size': cfg.get('model_size', 'base'),
+        'dropout': cfg.get('dropout', 0.1),
+        'pretrained': cfg.get('pretrained', None)
+    }
+
+    model = get_model(model_type, **model_kwargs).to(device)
+
     total_params = sum(p.numel() for p in model.parameters())
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     logging.info(f"Model: {model_type}, Total params: {total_params:,}, Trainable: {trainable_params:,}")
 
-    # Load pretrained weights if provided
     if pretrained_path:
         ckpt = (ROOT / pretrained_path).resolve()
         state = torch.load(ckpt, map_location=device)
         model.load_state_dict(state, strict=False)
         logging.info(f"Loaded pretrained weights from {ckpt.name}")
 
-    # Optimized optimizer with better regularization
     weight_decay = cfg.get('weight_decay', 0.01)
     optimizer = torch.optim.AdamW(
         model.parameters(),
@@ -174,21 +185,18 @@ def main(cfg_path, pretrained_path=None):
         eps=1e-8
     )
 
-    # Better scheduler - ReduceLROnPlateau to avoid premature LR decay
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
-        mode='max',  # Monitor validation accuracy
-        factor=0.5,  # Reduce LR by half
-        patience=5,  # Wait 5 epochs before reducing
+        mode='max',
+        factor=0.5,
+        patience=5,
         min_lr=1e-6,
         verbose=True
     )
 
-    # Loss function with configurable label smoothing
     label_smoothing = cfg.get('label_smoothing', 0.1)
     criterion = torch.nn.CrossEntropyLoss(label_smoothing=label_smoothing)
 
-    # Results tracking
     results_csv = ROOT / "reports" / "figures" / f"results_{model_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     results_csv.parent.mkdir(parents=True, exist_ok=True)
 
@@ -196,7 +204,6 @@ def main(cfg_path, pretrained_path=None):
         writer = csv.writer(f)
         writer.writerow(["epoch", "train_loss", "train_acc", "val_loss", "val_acc", "lr", "time"])
 
-    # Training loop
     best_acc = 0.0
     total_start_time = time.time()
 
@@ -205,13 +212,10 @@ def main(cfg_path, pretrained_path=None):
     for epoch in range(1, cfg['epochs'] + 1):
         epoch_start = time.time()
 
-        # Training
         train_loss, train_acc = train_epoch(model, train_loader, optimizer, criterion, device, epoch)
 
-        # Validation
         val_loss, val_acc = validate(model, val_loader, criterion, device)
 
-        # Scheduler step - pass validation accuracy
         scheduler.step(val_acc)
         current_lr = optimizer.param_groups[0]['lr']
 
@@ -222,13 +226,11 @@ def main(cfg_path, pretrained_path=None):
                      f'Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}% - '
                      f'LR: {current_lr:.6f}, Time: {epoch_time:.1f}s')
 
-        # Save results
         with open(results_csv, 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow([epoch, f"{train_loss:.4f}", f"{train_acc:.2f}",
                              f"{val_loss:.4f}", f"{val_acc:.2f}", f"{current_lr:.6f}", f"{epoch_time:.1f}"])
 
-        # Save best model
         if val_acc > best_acc:
             best_acc = val_acc
             ckpt_dir = ROOT / "checkpoints"
