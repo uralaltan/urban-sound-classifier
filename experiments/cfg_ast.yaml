@@ -2,9 +2,12 @@ csv: data/UrbanSound8K/metadata/UrbanSound8K.csv
 audio_root: data/UrbanSound8K/audio
 train_folds: [ 1,2,3,4,5,6,7,8,9 ]
 val_folds: [ 10 ]
-model_type: se_cnn
-n_mels: 256
+model_type: ast_transformer
+pretrained: imagenet
+n_mels: 128
 sample_rate: 22050
+patch_size: [ 16,16 ]
+input_dims: [ 128,173 ]
 use_mixup: true
 mixup_alpha: 0.3
 use_specaugment: true
@@ -12,12 +15,17 @@ freq_mask_prob: 0.6
 freq_mask_size: 12
 time_mask_prob: 0.6
 time_mask_size: 20
-epochs: 50
-batch_size: 32
-lr: 0.0005
+optimizer: AdamW
+epochs: 100
+warmup_epochs: 10
+batch_size: 24
+lr: 0.0008
+min_lr: 1e-6
 weight_decay: 0.01
-scheduler_type: cosine_restart
-scheduler_t0: 5
-label_smoothing: 0.2
+scheduler_type: cosine_warmup
+early_stopping_patience: 25
+dropout: 0.3
+label_smoothing: 0.1
+gradient_clipping: 1.0
 device: cuda
 seed: 42

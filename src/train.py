@@ -245,7 +245,7 @@ def main(cfg_path, pretrained_path=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Fast UrbanSound8K Training')
-    parser.add_argument('--cfg', default='experiments/cfg_quick.yaml',
+    parser.add_argument('--cfg', default='experiments/cfg_baseline.yaml',
                         help='Path to configuration file')
     parser.add_argument('--pretrained', default=None,
                         help='Path to pretrained checkpoint')

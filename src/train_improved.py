@@ -520,7 +520,7 @@ def main(cfg_path, pretrained_path=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Advanced UrbanSound8K Training')
-    parser.add_argument('--config', '-c', default='experiments/cfg_high_performance.yaml',
+    parser.add_argument('--config', '-c', default='experiments/cfg_baseline.yaml',
                         help='Path to configuration file')
     parser.add_argument('--pretrained', '-p', default=None,
                         help='Path to pretrained model weights')
