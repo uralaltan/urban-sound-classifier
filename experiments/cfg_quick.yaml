@@ -1,0 +1,21 @@
+# experiments/cfg_quick.yaml
+# Optimized configuration for fast training
+
+seed: 42
+device: 'cuda'  # Use GPU if available
+
+# Data paths
+csv: 'data/raw/UrbanSound8K/metadata/UrbanSound8K.csv'
+audio_root: 'data/raw/UrbanSound8K/audio'
+
+# Fast training setup - use fewer folds for quicker iteration
+train_folds: [ 1, 2, 3, 4, 5, 6, 7 ]  # 7 folds for training
+val_folds: [ 8 ]  # 1 fold for validation (fold 10 typically reserved for test)
+
+# Optimized hyperparameters for speed
+batch_size: 64  # Larger batch size for faster training (adjust based on GPU memory)
+lr: 0.003  # Higher learning rate for faster convergence
+epochs: 20  # Fewer epochs to start with
+
+# Model selection (use baseline for fastest training, improved for better accuracy)
+model_type: 'baseline'  # Options: 'baseline', 'improved', 'transfer'

@@ -178,3 +178,7 @@ data/raw/UrbanSound8K
 
 # DS Store
 .DS_Store
+
+# Generated files
+checkpoints/
+reports/figures
