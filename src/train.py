@@ -190,8 +190,7 @@ def main(cfg_path, pretrained_path=None):
         mode='max',
         factor=0.5,
         patience=5,
-        min_lr=1e-6,
-        verbose=True
+        min_lr=1e-6
     )
 
     label_smoothing = cfg.get('label_smoothing', 0.1)
