@@ -5,8 +5,8 @@ seed: 42
 device: 'cuda'
 
 # Data paths
-csv: 'data/raw/UrbanSound8K/metadata/UrbanSound8K.csv'
-audio_root: 'data/raw/UrbanSound8K/audio'
+csv: 'data/UrbanSound8K/metadata/UrbanSound8K.csv'
+audio_root: 'data/UrbanSound8K/audio'
 
 # Use more validation data to reduce overfitting
 train_folds: [ 1, 2, 3, 4, 5, 6 ]  # 6 folds for training

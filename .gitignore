@@ -174,7 +174,7 @@ cython_debug/
 .pypirc
 
 # Dataset
-data/raw/UrbanSound8K
+data/UrbanSound8K
 
 # DS Store
 .DS_Store

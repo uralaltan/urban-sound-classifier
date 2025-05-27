@@ -1,5 +1,5 @@
-csv: data/raw/UrbanSound8K/metadata/UrbanSound8K.csv
-audio_root: data/raw/UrbanSound8K/audio
+csv: data/UrbanSound8K/metadata/UrbanSound8K.csv
+audio_root: data/UrbanSound8K/audio
 train_folds: [ 1,2,3,4,5,6,7,8,9 ]
 val_folds: [ 10 ]
 batch_size: 32
