@@ -196,6 +196,28 @@ Sensör değişkenliğini simüle etmek için minör Gaussian gürültü eklendi
 | SE-CNN      | 4.8M         | 86.7              | 85.9              | 0.856    | 15.7           |
 | AST (bizim) | 9.3M         | 91.3              | 90.5              | 0.903    | 28.4           |
 
+![Model Karşılaştırması](../../visualizations/results/model_comparison.png)
+_Şekil 1: Üç model mimarisinin doğruluk, F1-skoru ve hesaplama maliyeti açısından kapsamlı karşılaştırması_
+
+### 4.1.1 Eğitim Eğrileri
+
+Her model için eğitim süreci boyunca gözlemlenen doğruluk ve kayıp değerleri aşağıda gösterilmektedir:
+
+#### Baseline CNN Eğitim Sonuçları
+
+![Baseline CNN Eğitim Eğrileri](../../visualizations/results/baseline_cnn_training_curves.png)
+_Şekil 2: Baseline CNN modelinin eğitim ve doğrulama doğruluk/kayıp eğrileri_
+
+#### SE-CNN Eğitim Sonuçları
+
+![SE-CNN Eğitim Eğrileri](../../visualizations/results/improved_acdnet_training_curves.png)
+_Şekil 3: Squeeze-and-Excitation CNN modelinin eğitim ve doğrulama eğrileri_
+
+#### AST Transformer Eğitim Sonuçları
+
+![AST Eğitim Eğrileri](../../visualizations/results/ast_transformer_training_curves.png)
+_Şekil 4: Audio Spectrogram Transformer modelinin eğitim süreci_
+
 ### 4.2 Sınıf Bazlı Performans Analizi
 
 **En İyi Performans (AST Model):**
@@ -210,12 +232,40 @@ Sensör değişkenliğini simüle etmek için minör Gaussian gürültü eklendi
 - Silah sesi: %85.3 başarı (ani sesler)
 - Çocuk oynama: %87.9 başarı (yüksek varyans)
 
+#### Karışıklık Matrisleri
+
+Sınıflar arası karışıklığı gösteren detaylı analizler:
+
+![Baseline CNN Karışıklık Matrisi](../../visualizations/results/baseline_cnn_confusion_matrix.png)
+_Şekil 5: Baseline CNN modeli için karışıklık matrisi_
+
+![SE-CNN Karışıklık Matrisi](../../visualizations/results/improved_acdnet_confusion_matrix.png)
+_Şekil 6: SE-CNN modeli için karışıklık matrisi_
+
+![AST Karışıklık Matrisi](../../visualizations/results/ast_transformer_confusion_matrix.png)
+_Şekil 7: AST Transformer modeli için karışıklık matrisi_
+
+#### Sınıf Bazlı Detaylı Metrikler
+
+![AST Sınıf Metrikleri](../../visualizations/results/ast_transformer_class_metrics.png)
+_Şekil 8: AST modeli için sınıf bazlı precision, recall ve F1-score değerleri_
+
 ### 4.3 Ablasyon Çalışması
 
 | Teknik             | AST Temel | +SpecAugment | +Mixup | +Her İkisi |
 | ------------------ | --------- | ------------ | ------ | ---------- |
 | Doğrulama Başarısı | 87.9%     | 89.1%        | 88.7%  | 91.3%      |
 | Test Başarısı      | 87.2%     | 88.6%        | 88.1%  | 90.5%      |
+
+### 4.3.1 ROC ve Precision-Recall Eğrileri
+
+Model performansının detaylı analizi için ROC ve PR eğrileri:
+
+![AST ROC Eğrileri](../../visualizations/results/ast_transformer_roc_curves.png)
+_Şekil 9: AST modeli için sınıf bazlı ROC eğrileri_
+
+![AST PR Eğrileri](../../visualizations/results/ast_transformer_pr_curves.png)
+_Şekil 10: AST modeli için sınıf bazlı Precision-Recall eğrileri_
 
 ### 4.4 Hesaplama Maliyeti Analizi
 
@@ -224,6 +274,19 @@ Sensör değişkenliğini simüle etmek için minör Gaussian gürültü eklendi
 | Temel CNN | 1.2       | 1024            | 2.1                  |
 | SE-CNN    | 2.8       | 1536            | 3.4                  |
 | AST       | 12.4      | 4096            | 8.7                  |
+
+![Eğitim Verimliliği Analizi](../../visualizations/results/training_efficiency_analysis.png)
+_Şekil 11: Model eğitim verimliliği ve hesaplama maliyeti karşılaştırması_
+
+### 4.4.1 Öğrenme Eğrileri ve Model Davranışı
+
+![AST Öğrenme Eğrileri](../../visualizations/results/ast_transformer_learning_curves.png)
+_Şekil 12: AST modeli için farklı eğitim seti boyutlarında öğrenme eğrileri_
+
+### 4.4.2 Özellik Önem Analizi
+
+![AST Özellik Önemi](../../visualizations/results/ast_transformer_feature_importance.png)
+_Şekil 13: AST modeli için spektrogram bölgelerinin önem haritası_
 
 ---
 
@@ -337,10 +400,68 @@ SE-CNN modeli, vanilla CNN'e göre mütevazı 2.7 milyon parametre artışıyla 
 tabanlı AST modeli, parametre sayısını ikiye katlarken 4.6 yüzde puan daha fazla başarı ekledi, bu da model boyutuna
 göre azalan getiri göstergesidir.
 
+![Detaylı Metrik Analizi](../../visualizations/results/detailed_metrics_heatmap.png)
+_Şekil 14: Tüm modeller için detaylı performans metriklerinin ısı haritası_
+
+### 5.1.1 İstatistiksel Analiz
+
+![İstatistiksel Analiz](../../visualizations/results/statistical_analysis_boxplot.png)
+_Şekil 15: Model performanslarının istatistiksel dağılımı ve güven aralıkları_
+
+### 5.1.2 Hata Analizi
+
+![Hata Analizi](../../visualizations/results/error_analysis.png)
+_Şekil 16: Sınıf bazlı hata türleri ve model davranış analizi_
+
+### 5.1.3 Kapsamlı Performans Özeti
+
+![Özet Radar Grafiği](../../visualizations/results/final_summary_radar.png)
+_Şekil 17: Tüm modellerin çok boyutlu performans karşılaştırması_
+
 ### 5.2 Veri Artırma Etkisi
 
 SpecAugment ve Mixup kombinasyonu, özellikle sınırlı veri durumunda önemli iyileştirmeler sağladı. Bu sonuç, ses
 sınıflandırması görevlerinde veri artırmanın kritik rolünü vurgulamaktadır.
+
+#### Baseline CNN Detaylı Analizi
+
+![Baseline CNN Sınıf Metrikleri](../../visualizations/results/baseline_cnn_class_metrics.png)
+_Şekil 18: Baseline CNN modeli için sınıf bazlı performans metrikleri_
+
+![Baseline CNN ROC](../../visualizations/results/baseline_cnn_roc_curves.png)
+_Şekil 19: Baseline CNN modeli ROC eğrileri_
+
+#### SE-CNN Detaylı Analizi
+
+![SE-CNN Sınıf Metrikleri](../../visualizations/results/improved_acdnet_class_metrics.png)
+_Şekil 20: SE-CNN modeli için sınıf bazlı performans metrikleri_
+
+![SE-CNN ROC](../../visualizations/results/improved_acdnet_roc_curves.png)
+_Şekil 21: SE-CNN modeli ROC eğrileri_
+
+#### Model Özellik Önem Karşılaştırması
+
+![Baseline CNN Özellik Önemi](../../visualizations/results/baseline_cnn_feature_importance.png)
+_Şekil 22: Baseline CNN modeli spektrogram özellik önem haritası_
+
+![SE-CNN Özellik Önemi](../../visualizations/results/improved_acdnet_feature_importance.png)
+_Şekil 23: SE-CNN modeli spektrogram özellik önem haritası_
+
+#### Precision-Recall Eğrileri Karşılaştırması
+
+![Baseline CNN PR Eğrileri](../../visualizations/results/baseline_cnn_pr_curves.png)
+_Şekil 24: Baseline CNN modeli için sınıf bazlı Precision-Recall eğrileri_
+
+![SE-CNN PR Eğrileri](../../visualizations/results/improved_acdnet_pr_curves.png)
+_Şekil 25: SE-CNN modeli için sınıf bazlı Precision-Recall eğrileri_
+
+#### Öğrenme Eğrileri Karşılaştırması
+
+![Baseline CNN Öğrenme Eğrileri](../../visualizations/results/baseline_cnn_learning_curves.png)
+_Şekil 26: Baseline CNN modeli için farklı eğitim seti boyutlarında öğrenme performansı_
+
+![SE-CNN Öğrenme Eğrileri](../../visualizations/results/improved_acdnet_learning_curves.png)
+_Şekil 27: SE-CNN modeli için farklı eğitim seti boyutlarında öğrenme performansı_
 
 ### 5.3 Transformer vs CNN Analizi
 
